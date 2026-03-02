@@ -18,7 +18,21 @@ function AuthProvider({ children }) {
 
   const loadProfile = async (u) => {
     if (!u) { setProfile(null); return }
-    const { data } = await sb.from('profiles').select('*').eq('id', u.id).single()
+    let { data } = await sb.from('profiles').select('*').eq('id', u.id).single()
+    // Auto-create profile if missing (magic link / invite users)
+    if (!data) {
+      const inserted = await sb.from('profiles').insert({
+        id: u.id,
+        name: u.user_metadata?.name || u.email.split('@')[0],
+        email: u.email,
+        phone: u.user_metadata?.phone || '',
+        section: u.user_metadata?.section || 'FOH',
+        roles: u.user_metadata?.roles || [],
+        role_level: u.user_metadata?.role_level || 'employee',
+        status: 'active'
+      }).select().single()
+      data = inserted.data
+    }
     setProfile(data)
   }
 
