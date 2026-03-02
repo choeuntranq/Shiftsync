@@ -158,6 +158,73 @@ nav{flex:1;padding:12px 8px;display:flex;flex-direction:column;gap:2px;overflow-
 ::-webkit-scrollbar-thumb{background:var(--s3);border-radius:2px;}
 `
 
+// ── LOGO MARK SVG ────────────────────────────────────────────────────────────
+function LogoMark({ size=42 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 42 42" fill="none">
+      <defs>
+        <linearGradient id="lgg" x1="0" y1="0" x2="42" y2="42" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#FF5C35"/>
+          <stop offset="100%" stopColor="#F59E0B"/>
+        </linearGradient>
+      </defs>
+      <rect width="42" height="42" rx="11" fill="url(#lgg)"/>
+      <rect x="9" y="13" width="24" height="3.5" rx="1.75" fill="white" opacity="0.95"/>
+      <rect x="9" y="20" width="17" height="3.5" rx="1.75" fill="white" opacity="0.7"/>
+      <rect x="9" y="27" width="21" height="3.5" rx="1.75" fill="white" opacity="0.5"/>
+      <circle cx="31" cy="28.5" r="6" fill="rgba(255,255,255,0.15)"/>
+      <path d="M28.5 28.5L30.5 30.5L33.5 26.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+
+// ── SHARED AUTH LAYOUT ────────────────────────────────────────────────────────
+function AuthLayout({ children }) {
+  const ACSS = `
+    .auth-wrap{min-height:100vh;display:flex;background:var(--bg);}
+    .auth-left{width:440px;flex-shrink:0;background:linear-gradient(160deg,#14161F 0%,#0C0D11 100%);border-right:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;justify-content:space-between;padding:48px 44px;}
+    .auth-right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px;}
+    .auth-form{width:100%;max-width:380px;}
+    .auth-tagline{font-family:'Syne',sans-serif;font-size:34px;font-weight:800;line-height:1.15;margin-bottom:14px;}
+    .auth-desc{font-size:13px;color:var(--t3);line-height:1.75;}
+    .feat-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--t3);}
+    .feat-icon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+    @media(max-width:640px){.auth-left{display:none;}.auth-right{padding:24px;}}
+  `
+  return (
+    <div className="auth-wrap">
+      <style>{CSS}{ACSS}</style>
+      <div className="auth-left">
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <LogoMark size={40}/>
+          <div>
+            <div style={{fontFamily:"'Syne',sans-serif",fontSize:19,fontWeight:800,background:'linear-gradient(130deg,#FF5C35,#F59E0B)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Shifts Align</div>
+            <div style={{fontSize:10,color:'var(--t3)',letterSpacing:'1px',textTransform:'uppercase',marginTop:1}}>Restaurant Scheduling</div>
+          </div>
+        </div>
+        <div>
+          <div className="auth-tagline">
+            Scheduling<br/>
+            <span style={{background:'linear-gradient(130deg,#FF5C35,#F59E0B)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>that flows.</span>
+          </div>
+          <div className="auth-desc">Build weekly schedules, auto-fill shifts, manage your team, and keep everyone in sync — all in one place.</div>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {[['⚡','Auto-Fill','Fill your whole schedule in one click'],['📋','Templates','Reuse shift patterns across weeks'],['💬','Team Chat','Keep FOH and BOH connected']].map(([icon,label,desc])=>(
+            <div className="feat-pill" key={label}>
+              <div className="feat-icon">{icon}</div>
+              <div><div style={{fontWeight:600,color:'var(--t2)',fontSize:12}}>{label}</div><div style={{fontSize:11}}>{desc}</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="auth-right">
+        <div className="auth-form">{children}</div>
+      </div>
+    </div>
+  )
+}
+
 // ── LOGIN PAGE ────────────────────────────────────────────────────────────────
 function LoginPage() {
   const { signIn } = useAuth()
@@ -174,21 +241,19 @@ function LoginPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
-      <div style={{width:380,padding:40,background:'var(--s)',borderRadius:16,border:'1px solid var(--b2)'}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,background:'linear-gradient(130deg,var(--a),var(--g))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
-          <div style={{fontSize:11,color:'var(--t3)',marginTop:4,letterSpacing:'.8px',textTransform:'uppercase'}}>Restaurant Scheduler</div>
-        </div>
-        <form onSubmit={submit}>
-          <div className="fg"><label className="lbl">Email</label><input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="you@restaurant.com"/></div>
-          <div className="fg"><label className="lbl">Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="••••••••"/></div>
-          {err && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--re)',marginBottom:16}}>{err}</div>}
-          <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center'}} disabled={loading}>{loading?'Signing in…':'Sign In'}</button>
-        </form>
-        <p style={{textAlign:'center',fontSize:12,color:'var(--t3)',marginTop:20}}>New employee? Check your email for an invite link.</p>
+    <AuthLayout>
+      <div style={{marginBottom:32}}>
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:800,marginBottom:6}}>Welcome back</div>
+        <div style={{fontSize:13,color:'var(--t2)'}}>Sign in to manage your team's schedule.</div>
       </div>
-    </div>
+      <form onSubmit={submit}>
+        <div className="fg"><label className="lbl">Email</label><input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="you@restaurant.com" autoFocus/></div>
+        <div className="fg"><label className="lbl">Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="••••••••"/></div>
+        {err && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--re)',marginBottom:16}}>{err}</div>}
+        <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:14}} disabled={loading}>{loading?'Signing in…':'Sign In'}</button>
+      </form>
+      <p style={{textAlign:'center',fontSize:12,color:'var(--t3)',marginTop:20}}>New employee? Check your email for an invite link.</p>
+    </AuthLayout>
   )
 }
 
@@ -290,7 +355,7 @@ function EmployeePortal() {
       <style>{CSS}{EMPCSS}</style>
       <div style={{display:'flex',flexDirection:'column',height:'100vh'}}>
         <div style={{background:'var(--s)',borderBottom:'1px solid var(--b)',padding:'14px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <div className="logo-name" style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:800,background:'linear-gradient(130deg,var(--a),var(--g))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
+          <div className="logo-name" style={{fontFamily:"'Syne',sans-serif",fontSize:18,fontWeight:800,background:'linear-gradient(130deg,var(--a),var(--g))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Shifts Align</div>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
             <div className="av" style={{background:avi(profile?.name)}}>{ini(profile?.name)}</div>
             <div><div style={{fontSize:13,fontWeight:600}}>{profile?.name}</div><div style={{fontSize:11,color:'var(--t3)'}}>{profile?.section}</div></div>
@@ -1282,8 +1347,8 @@ function ManagerDashboard() {
       <div className="app">
         <div className={`sidebar ${sidebarOpen?'':'off'}`}>
           <div className="logo">
-            <div className="logo-name">ShiftSync</div>
-            <div className="logo-sub">Restaurant Scheduler</div>
+            <div className="logo-name">Shifts Align</div>
+            <div className="logo-sub">Staff Scheduling</div>
           </div>
           <nav>
             {NAV.map(n=>(
@@ -1336,7 +1401,7 @@ function SetPasswordPage() {
 
   const submit = async e => {
     e.preventDefault()
-    if (pw !== pw2) { setErr('Passwords don\'t match'); return }
+    if (pw !== pw2) { setErr("Passwords don't match"); return }
     if (pw.length < 6) { setErr('Password must be at least 6 characters'); return }
     setBusy(true); setErr('')
     const { error } = await sb.auth.updateUser({ password: pw })
@@ -1346,24 +1411,29 @@ function SetPasswordPage() {
   }
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
-      <style>{CSS}</style>
-      <div style={{width:380,padding:40,background:'var(--s)',borderRadius:16,border:'1px solid var(--b2)'}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,background:'linear-gradient(130deg,var(--a),var(--g))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
-          <div style={{fontSize:13,color:'var(--t2)',marginTop:8}}>Set your password to finish setting up your account.</div>
+    <AuthLayout>
+      <div style={{marginBottom:32}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+          <div style={{width:40,height:40,borderRadius:10,background:'rgba(16,185,129,.15)',border:'1px solid rgba(16,185,129,.3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>👋</div>
+          <div style={{fontSize:12,fontWeight:600,color:'var(--gr)'}}>You're invited!</div>
         </div>
-        {done
-          ? <div style={{textAlign:'center',color:'var(--gr)',fontWeight:600}}>✓ Password set! Logging you in…</div>
-          : <form onSubmit={submit}>
-              <div className="fg"><label className="lbl">New Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="At least 6 characters" autoFocus/></div>
-              <div className="fg"><label className="lbl">Confirm Password</label><input className="fi" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} required placeholder="Repeat password"/></div>
-              {err && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--re)',marginBottom:16}}>{err}</div>}
-              <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center'}} disabled={busy}>{busy?'Setting password…':'Set Password'}</button>
-            </form>
-        }
+        <div style={{fontFamily:"'Syne',sans-serif",fontSize:26,fontWeight:800,marginBottom:6}}>Set your password</div>
+        <div style={{fontSize:13,color:'var(--t2)'}}>Choose a password to finish setting up your account and get started.</div>
       </div>
-    </div>
+      {done
+        ? <div style={{background:'rgba(16,185,129,.1)',border:'1px solid rgba(16,185,129,.25)',borderRadius:12,padding:'20px',textAlign:'center'}}>
+            <div style={{fontSize:28,marginBottom:8}}>✓</div>
+            <div style={{fontWeight:700,color:'var(--gr)',marginBottom:4}}>Password set!</div>
+            <div style={{fontSize:13,color:'var(--t2)'}}>Logging you in…</div>
+          </div>
+        : <form onSubmit={submit}>
+            <div className="fg"><label className="lbl">New Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="At least 6 characters" autoFocus/></div>
+            <div className="fg"><label className="lbl">Confirm Password</label><input className="fi" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} required placeholder="Repeat password"/></div>
+            {err && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--re)',marginBottom:16}}>{err}</div>}
+            <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center',padding:'11px',fontSize:14}} disabled={busy}>{busy?'Setting password…':'Set Password & Sign In'}</button>
+          </form>
+      }
+    </AuthLayout>
   )
 }
 
@@ -1390,7 +1460,7 @@ function AppRouter() {
 
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0C0D11'}}>
-      <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,background:'linear-gradient(130deg,#FF5C35,#F59E0B)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
+      <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,background:'linear-gradient(130deg,#FF5C35,#F59E0B)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Shifts Align</div>
     </div>
   )
   if (needsPassword && user) return <SetPasswordPage/>
