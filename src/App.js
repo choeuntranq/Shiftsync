@@ -226,7 +226,7 @@ function AuthProvider({ children }) {
   const isManager = role==='manager'||isOwner
 
   return (
-    <AuthCtx.Provider value={{user,profile,restaurants,activeRest,membership,loading,signIn,signOut,switchRest,reloadAll,isOwner,isManager,role}}>
+    <AuthCtx.Provider value={{user,profile,restaurants,activeRest,membership,loading,signIn,signUp,signOut,switchRest,reloadAll,isOwner,isManager,role}}>
       {children}
     </AuthCtx.Provider>
   )
