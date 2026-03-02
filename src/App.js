@@ -219,6 +219,7 @@ function AuthProvider({ children }) {
   },[])
 
   const signIn  = (e,p) => sb.auth.signInWithPassword({email:e,password:p})
+  const signUp  = (e,p,n) => sb.auth.signUp({email:e,password:p,options:{data:{name:n},emailRedirectTo:window.location.origin}})
   const signOut = async () => { await sb.auth.signOut(); setUser(null);setProfile(null);setRestaurants([]);setActiveRestState(null);setMembership(null) }
   const role      = membership?.role_level||'employee'
   const isOwner   = role==='owner'
@@ -272,16 +273,105 @@ function AuthLayout({title,subtitle,children}) {
 function LoginPage() {
   const {signIn}=useAuth()
   const [email,setEmail]=useState(''); const [pw,setPw]=useState(''); const [err,setErr]=useState(''); const [busy,setBusy]=useState(false)
-  const submit = async e => { e.preventDefault();setBusy(true);setErr(''); const {error}=await signIn(email,pw); if(error){setErr(error.message);setBusy(false)} }
+  const [mode,setMode]=useState('login') // login | forgot
+  const [resetSent,setResetSent]=useState(false)
+
+  const submit = async e => {
+    e.preventDefault(); setBusy(true); setErr('')
+    if(mode==='forgot'){
+      const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin})
+      if(error){setErr(error.message);setBusy(false);return}
+      setResetSent(true); setBusy(false); return
+    }
+    const {error}=await signIn(email,pw)
+    if(error){setErr(error.message);setBusy(false)}
+  }
+
+  if(resetSent) return (
+    <AuthLayout title="Check your email." subtitle="A password reset link is on its way.">
+      <div style={{textAlign:'center',padding:'20px 0'}}>
+        <div style={{fontSize:40,marginBottom:12}}>📬</div>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Reset link sent!</div>
+        <div style={{fontSize:13,color:'var(--t2)',fontWeight:500,marginBottom:20}}>Check {email} and click the link to reset your password.</div>
+        <button className="btn se" style={{width:'100%',justifyContent:'center'}} onClick={()=>{setMode('login');setResetSent(false)}}>Back to Sign In</button>
+      </div>
+    </AuthLayout>
+  )
+
   return (
-    <AuthLayout title="Welcome back." subtitle="Sign in to manage your team.">
+    <AuthLayout title={mode==='forgot'?'Reset your password.':'Welcome back.'} subtitle={mode==='forgot'?"Enter your email and we'll send a reset link.":'Sign in to manage your team.'}>
       <form onSubmit={submit}>
         <div className="fg"><label className="lbl">Email</label><input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="you@restaurant.com" autoFocus/></div>
-        <div className="fg"><label className="lbl">Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="••••••••"/></div>
+        {mode==='login'&&<div className="fg"><label className="lbl">Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="••••••••"/></div>}
         {err&&<div className="err-box">{err}</div>}
-        <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center',padding:'10px'}} disabled={busy}>{busy?'Signing in…':'Sign In'}</button>
+        <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center',padding:'10px'}} disabled={busy}>
+          {busy?(mode==='forgot'?'Sending…':'Signing in…'):(mode==='forgot'?'Send Reset Link':'Sign In')}
+        </button>
       </form>
-      <p style={{textAlign:'center',fontSize:12,color:'var(--t3)',marginTop:16,fontWeight:600}}>New employee? Check your email for an invite link.</p>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:14}}>
+        {mode==='login'
+          ? <button className="btn gh" style={{fontSize:12,border:'none',padding:'4px 0',color:'var(--t3)'}} onClick={()=>setMode('forgot')}>Forgot password?</button>
+          : <button className="btn gh" style={{fontSize:12,border:'none',padding:'4px 0',color:'var(--t3)'}} onClick={()=>setMode('login')}>← Back to sign in</button>
+        }
+      </div>
+      {mode==='login'&&(
+        <div style={{marginTop:12,borderTop:'1px solid var(--b)',paddingTop:14}}>
+          <a href="/signup" style={{textDecoration:'none'}}>
+            <button type="button" className="btn se" style={{width:'100%',justifyContent:'center',padding:'10px',fontSize:13}}>Create an account</button>
+          </a>
+        </div>
+      )}
+    </AuthLayout>
+  )
+}
+
+// ── SIGNUP PAGE ───────────────────────────────────────────────────────────────
+function SignupPage() {
+  const {signUp}=useAuth()
+  const [name,setName]=useState('')
+  const [email,setEmail]=useState('')
+  const [pw,setPw]=useState('')
+  const [pw2,setPw2]=useState('')
+  const [err,setErr]=useState('')
+  const [busy,setBusy]=useState(false)
+  const [done,setDone]=useState(false)
+
+  const submit = async e => {
+    e.preventDefault()
+    if(pw!==pw2){setErr("Passwords don't match");return}
+    if(pw.length<6){setErr('Minimum 6 characters');return}
+    setBusy(true);setErr('')
+    const {error}=await signUp(email,pw,name)
+    if(error){setErr(error.message);setBusy(false);return}
+    setDone(true)
+  }
+
+  if(done) return (
+    <AuthLayout title="Check your email." subtitle="Confirm your address to finish signing up.">
+      <div style={{textAlign:'center',padding:'20px 0'}}>
+        <div style={{fontSize:40,marginBottom:12}}>📬</div>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:8}}>Almost there!</div>
+        <div style={{fontSize:13,color:'var(--t2)',fontWeight:500,marginBottom:20}}>We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.</div>
+        <a href="/" style={{display:'block'}}><button className="btn se" style={{width:'100%',justifyContent:'center'}}>Back to Sign In</button></a>
+      </div>
+    </AuthLayout>
+  )
+
+  return (
+    <AuthLayout title="Create your account." subtitle="Start your 14-day free trial. No credit card required.">
+      <form onSubmit={submit}>
+        <div className="fg"><label className="lbl">Full Name</label><input className="fi" value={name} onChange={e=>setName(e.target.value)} required placeholder="Your full name" autoFocus/></div>
+        <div className="fg"><label className="lbl">Email</label><input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="you@restaurant.com"/></div>
+        <div className="fg"><label className="lbl">Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="At least 6 characters"/></div>
+        <div className="fg"><label className="lbl">Confirm Password</label><input className="fi" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} required placeholder="Repeat password"/></div>
+        {err&&<div className="err-box">{err}</div>}
+        <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center',padding:'10px'}} disabled={busy||!name||!email||!pw||!pw2}>
+          {busy?'Creating account…':'Create Account'}
+        </button>
+      </form>
+      <p style={{textAlign:'center',fontSize:12,color:'var(--t3)',marginTop:14,fontWeight:600}}>
+        Already have an account? <a href="/" style={{color:'var(--a)',textDecoration:'none',fontWeight:700}}>Sign in →</a>
+      </p>
     </AuthLayout>
   )
 }
@@ -1541,6 +1631,7 @@ function AppRouter() {
     </div>
   )
 
+  if(window.location.pathname==='/signup')return <SignupPage/>
   if(needsPassword&&user)return <SetPasswordPage/>
   if(!user||!profile)return <LoginPage/>
   if(restaurants.length===0)return <OnboardingPage/>
