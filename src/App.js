@@ -1312,13 +1312,74 @@ function ManagerDashboard() {
 }
 
 // ── ROOT APP ──────────────────────────────────────────────────────────────────
+// ── SET PASSWORD PAGE ────────────────────────────────────────────────────────
+function SetPasswordPage() {
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [err, setErr] = useState('')
+  const [done, setDone] = useState(false)
+  const [busy, setBusy] = useState(false)
+
+  const submit = async e => {
+    e.preventDefault()
+    if (pw !== pw2) { setErr('Passwords don\'t match'); return }
+    if (pw.length < 6) { setErr('Password must be at least 6 characters'); return }
+    setBusy(true); setErr('')
+    const { error } = await sb.auth.updateUser({ password: pw })
+    if (error) { setErr(error.message); setBusy(false); return }
+    setDone(true); setBusy(false)
+    setTimeout(() => window.location.reload(), 1500)
+  }
+
+  return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}>
+      <style>{CSS}</style>
+      <div style={{width:380,padding:40,background:'var(--s)',borderRadius:16,border:'1px solid var(--b2)'}}>
+        <div style={{textAlign:'center',marginBottom:32}}>
+          <div style={{fontFamily:"'Syne',sans-serif",fontSize:28,fontWeight:800,background:'linear-gradient(130deg,var(--a),var(--g))',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
+          <div style={{fontSize:13,color:'var(--t2)',marginTop:8}}>Set your password to finish setting up your account.</div>
+        </div>
+        {done
+          ? <div style={{textAlign:'center',color:'var(--gr)',fontWeight:600}}>✓ Password set! Logging you in…</div>
+          : <form onSubmit={submit}>
+              <div className="fg"><label className="lbl">New Password</label><input className="fi" type="password" value={pw} onChange={e=>setPw(e.target.value)} required placeholder="At least 6 characters" autoFocus/></div>
+              <div className="fg"><label className="lbl">Confirm Password</label><input className="fi" type="password" value={pw2} onChange={e=>setPw2(e.target.value)} required placeholder="Repeat password"/></div>
+              {err && <div style={{background:'rgba(239,68,68,.1)',border:'1px solid rgba(239,68,68,.25)',borderRadius:8,padding:'10px 14px',fontSize:13,color:'var(--re)',marginBottom:16}}>{err}</div>}
+              <button type="submit" className="btn pr" style={{width:'100%',justifyContent:'center'}} disabled={busy}>{busy?'Setting password…':'Set Password'}</button>
+            </form>
+        }
+      </div>
+    </div>
+  )
+}
+
 function AppRouter() {
   const { user, profile, loading } = useAuth()
+  const [needsPassword, setNeedsPassword] = useState(false)
+
+  useEffect(() => {
+    // Check if user arrived via magic link (needs to set password)
+    const hash = window.location.hash
+    if (hash.includes('access_token') && hash.includes('type=magiclink')) {
+      setNeedsPassword(true)
+    }
+    // Also check auth event
+    sb.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
+        const hash = window.location.hash
+        if (hash.includes('type=magiclink') || hash.includes('type=invite')) {
+          setNeedsPassword(true)
+        }
+      }
+    })
+  }, [])
+
   if (loading) return (
     <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0C0D11'}}>
       <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,background:'linear-gradient(130deg,#FF5C35,#F59E0B)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>ShiftSync</div>
     </div>
   )
+  if (needsPassword && user) return <SetPasswordPage/>
   if (!user||!profile) return <LoginPage/>
   if (profile.role_level==='owner'||profile.role_level==='manager') return <ManagerDashboard/>
   return <EmployeePortal/>
